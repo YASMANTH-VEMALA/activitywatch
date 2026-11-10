@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workforce & AI Intelligence Platform (Stage A & B)</title>
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .timeline-bar-chunk { transition: transform 0.15s ease; }
+    .timeline-bar-chunk:hover { transform: scaleY(1.3); z-index: 10; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-6 py-3 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
+        AI
+      </div>
+      <div>
+        <h1 class="text-base font-semibold text-white leading-tight">Enterprise Pulse & AI Ops</h1>
+        <p class="text-xs text-slate-400">Stage A & Stage B Integrated Cockpit</p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex items-center space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+      <button onclick="switchTab('my-day')" id="tab-my-day" class="px-4 py-1.5 text-xs font-medium rounded-md text-white bg-indigo-600 transition">My Day</button>
+      <button onclick="switchTab('discrepancies')" id="tab-discrepancies" class="px-4 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition flex items-center space-x-1.5">
+        <span>Discrepancy Centre</span>
+        <span id="badge-open-flags" class="bg-red-500/20 text-red-400 px-1.5 py-0.2 rounded text-[10px] font-bold">...</span>
+      </button>
+      <button onclick="switchTab('projects')" id="tab-projects" class="px-4 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition">Projects</button>
+      <button onclick="switchTab('day-end')" id="tab-day-end" class="px-4 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition">Day-End Form</button>
+      <button onclick="switchTab('cockpit')" id="tab-cockpit" class="px-4 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition">Cockpit View</button>
+    </nav>
+
+    <!-- Persona Selector (SSO Mock Simulation) -->
+    <div class="flex items-center space-x-3">
+      <div class="text-right hidden sm:block">
+        <p id="current-user-name" class="text-xs font-semibold text-white">Loading...</p>
+        <p id="current-user-role" class="text-[10px] text-slate-400 uppercase tracking-wider">Role</p>
+      </div>
+      <select id="persona-select" onchange="changePersona(this.value)" class="bg-slate-800 border border-slate-700 text-xs text-white rounded-md px-3 py-1.5 focus:outline-none focus:border-indigo-500">
+        <option value="22222222-2222-2222-2222-222222222224">Vikram Joshi (Intern - R01, R07)</option>
+        <option value="22222222-2222-2222-2222-222222222223">Ananya Patel (ML Eng - R02, R05)</option>
+        <option value="22222222-2222-2222-2222-222222222222">Rohan Mehta (Core Dev - Clean)</option>
+        <option value="22222222-2222-2222-2222-222222222221">Priya Sharma (Team Lead)</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+
+    <!-- TAB 1: MY DAY SCREEN -->
+    <section id="section-my-day" class="space-y-6">
+      <!-- KPI Overview Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Active Work Time</span>
+            <i data-lucide="laptop" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="kpi-active-hours" class="text-2xl font-bold text-white">--</span>
+            <span class="text-xs text-slate-500">hours</span>
+          </div>
+          <p class="text-[11px] text-emerald-400 mt-1">Non-AFK focused activity</p>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Office Badge Time</span>
+            <i data-lucide="clock" class="w-4 h-4 text-blue-400"></i>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="kpi-office-hours" class="text-2xl font-bold text-white">--</span>
+            <span class="text-xs text-slate-500">hours</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1" id="kpi-punch-range">Punch IN to OUT</p>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>Workstation Utilization</span>
+            <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="kpi-utilization" class="text-2xl font-bold text-white">--%</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">Active ÷ Office Hours</p>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div class="flex items-center justify-between text-slate-400 text-xs">
+            <span>AI Operations & Spend</span>
+            <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i>
+          </div>
+          <div class="mt-2 flex items-baseline space-x-2">
+            <span id="kpi-ai-spend" class="text-2xl font-bold text-white">$0.00</span>
+            <span id="kpi-ai-tokens" class="text-xs text-slate-500">(0 tokens)</span>
+          </div>
+          <p class="text-[11px] text-purple-400 mt-1" id="kpi-ai-time">LiteLLM virtual proxy</p>
+        </div>
+      </div>
+
+      <!-- Timeline & Transparency Header -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-sm font-semibold text-white">Unified Timeline (09:00 - 19:00 IST)</h2>
+            <p class="text-xs text-slate-400">Consolidated ActivityWatch telemetry + Biometric turnstile punches + LiteLLM AI calls</p>
+          </div>
+          <button onclick="toggleTransparencyDrawer()" class="text-xs font-medium text-indigo-400 hover:text-indigo-300 flex items-center space-x-1.5 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>What is captured?</span>
+          </button>
+        </div>
+
+        <!-- Visual Timeline Bar -->
+        <div class="space-y-1.5">
+          <div id="timeline-bar-container" class="h-8 bg-slate-950 rounded-lg flex overflow-hidden border border-slate-800 relative">
+            <!-- Dynamic colored chunks will be injected here -->
+          </div>
+          <div class="flex justify-between text-[10px] text-slate-500 font-mono px-1">
+            <span>09:00</span>
+            <span>11:00</span>
+            <span>13:00 (Lunch)</span>
+            <span>15:00</span>
+            <span>17:00</span>
+            <span>19:00</span>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex flex-wrap items-center gap-4 text-xs pt-2 border-t border-slate-800/60">
+          <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded bg-emerald-500"></span><span class="text-slate-400">Punch IN/OUT</span></div>
+          <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded bg-indigo-500"></span><span class="text-slate-400">Active Work</span></div>
+          <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded bg-amber-500"></span><span class="text-slate-400">Idle / AFK</span></div>
+          <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded bg-purple-500"></span><span class="text-slate-400">LiteLLM AI Call</span></div>
+          <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded bg-red-500"></span><span class="text-slate-400">Unapproved Tool</span></div>
+        </div>
+      </div>
+
+      <!-- Chronological Event Stream -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3">
+        <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Chronological Event Log</h3>
+        <div id="timeline-event-list" class="space-y-2 max-h-96 overflow-y-auto pr-1">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: DISCREPANCY CENTRE -->
+    <section id="section-discrepancies" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-semibold text-white">Discrepancy Centre & Exceptions</h2>
+          <p class="text-xs text-slate-400">Review automated flags raised by rules R01, R02, R05, and R07</p>
+        </div>
+        <!-- Rule filter pills -->
+        <div class="flex items-center space-x-2">
+          <button onclick="filterFlags('ALL')" class="px-3 py-1 rounded text-xs font-medium bg-slate-800 text-white border border-slate-700">All</button>
+          <button onclick="filterFlags('R01')" class="px-3 py-1 rounded text-xs font-medium bg-slate-800 text-slate-400 hover:text-white">R01 (No Laptop)</button>
+          <button onclick="filterFlags('R02')" class="px-3 py-1 rounded text-xs font-medium bg-slate-800 text-slate-400 hover:text-white">R02 (Excess Idle)</button>
+          <button onclick="filterFlags('R05')" class="px-3 py-1 rounded text-xs font-medium bg-slate-800 text-slate-400 hover:text-white">R05 (AI While Idle)</button>
+          <button onclick="filterFlags('R07')" class="px-3 py-1 rounded text-xs font-medium bg-slate-800 text-slate-400 hover:text-white">R07 (Unapproved AI)</button>
+        </div>
+      </div>
+
+      <!-- Flags Grid / List -->
+      <div id="flags-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 3: PROJECT MANAGEMENT -->
+    <section id="section-projects" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-semibold text-white">Active Projects & AI Budgets</h2>
+          <p class="text-xs text-slate-400">Classified as Serious (Client/Core) or Research (Experimental)</p>
+        </div>
+      </div>
+      <div id="projects-container" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- TAB 4: DAY-END UPDATE FORM -->
+    <section id="section-day-end" class="hidden space-y-6 max-w-3xl mx-auto">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-5">
+        <div>
+          <h2 class="text-base font-semibold text-white">Automated Day-End Update</h2>
+          <p class="text-xs text-slate-400">Pre-populated from your ActivityWatch telemetry and LiteLLM interactions.</p>
+        </div>
+
+        <!-- Telemetry Summary Pill Bar -->
+        <div id="day-end-stats" class="bg-slate-950 p-4 rounded-lg border border-slate-800/80 flex flex-wrap gap-4 text-xs text-slate-300">
+          <div><span class="text-slate-500">Active Time:</span> <b id="de-active-hrs" class="text-white">--</b></div>
+          <div><span class="text-slate-500">Top Focus:</span> <b id="de-top-app" class="text-indigo-400">--</b></div>
+          <div><span class="text-slate-500">AI Calls:</span> <b id="de-ai-calls" class="text-purple-400">--</b></div>
+        </div>
+
+        <form onsubmit="submitDayEnd(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Key Accomplishments</label>
+            <textarea id="de-accomplishments" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Blockers / External Impediments</label>
+            <input type="text" id="de-blockers" value="None noted from telemetry." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500" />
+          </div>
+          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs py-2.5 rounded-lg transition shadow-md shadow-indigo-600/20">
+            Submit Day-End Summary
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 5: COCKPIT VIEW (METABASE MIRROR) -->
+    <section id="section-cockpit" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-semibold text-white">Executive Cockpit & Flight Deck</h2>
+          <p class="text-xs text-slate-400">Direct analytics feed from PostgreSQL v_cockpit_metrics view</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Team Utilization Table -->
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+          <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Team Member Utilization & Exceptions</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-300">
+              <thead class="bg-slate-950 text-slate-500 text-[11px] uppercase border-b border-slate-800">
+                <tr>
+                  <th class="p-2.5">Name</th>
+                  <th class="p-2.5">Role</th>
+                  <th class="p-2.5">Active Hrs</th>
+                  <th class="p-2.5">Badge Hrs</th>
+                  <th class="p-2.5">Utilization</th>
+                  <th class="p-2.5">Flags</th>
+                </tr>
+              </thead>
+              <tbody id="cockpit-table-body" class="divide-y divide-slate-800/60 font-mono">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Open Flags Breakdown Chart -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+          <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Active Rule Flags</h3>
+          <div id="cockpit-rules-breakdown" class="space-y-3 text-xs">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Evidence Panel Drawer (Modal) -->
+  <div id="evidence-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center space-x-2">
+          <span id="ev-rule-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400">R01</span>
+          <h3 id="ev-title" class="text-sm font-semibold text-white">Evidence Snapshot</h3>
+        </div>
+        <button onclick="closeEvidenceModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <p id="ev-description" class="text-slate-300">Description</p>
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800">
+          <p class="text-[10px] uppercase font-mono text-slate-500 mb-1">Evidence JSON Payload</p>
+          <pre id="ev-json" class="text-[11px] text-emerald-400 overflow-x-auto font-mono max-h-56"></pre>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="border-t border-slate-800 pt-4 space-y-3">
+        <div class="flex items-center space-x-2">
+          <button onclick="resolveCurrentFlag('ACCEPTED')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium py-2 rounded-lg transition border border-slate-700">Accept</button>
+          <button onclick="resolveCurrentFlag('REJECTED')" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium py-2 rounded-lg transition border border-slate-700">Reject (False Positive)</button>
+        </div>
+        <div class="space-y-1.5">
+          <input type="text" id="ev-explain-notes" placeholder="Add explanation (e.g. Attended client meeting off-desk)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white focus:outline-none focus:border-indigo-500" />
+          <button onclick="resolveCurrentFlag('EXPLAINED')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium py-2 rounded-lg transition">Submit Explanation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transparency Drawer ("What is Captured") -->
+  <div id="transparency-drawer" class="fixed inset-y-0 right-0 w-96 bg-slate-900 border-l border-slate-800 p-6 z-50 transform translate-x-full transition-transform duration-300 shadow-2xl space-y-5 overflow-y-auto">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+      <h3 class="text-sm font-semibold text-white flex items-center space-x-2">
+        <i data-lucide="shield" class="w-4 h-4 text-indigo-400"></i>
+        <span>Telemetry Transparency</span>
+      </h3>
+      <button onclick="toggleTransparencyDrawer()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+
+    <div class="space-y-4 text-xs text-slate-300">
+      <div>
+        <h4 class="font-semibold text-emerald-400 mb-1">✓ What IS Collected</h4>
+        <ul class="list-disc list-inside space-y-1 text-slate-400">
+          <li>Active application name (e.g. VS Code, Terminal)</li>
+          <li>Window title & URL domain (e.g. github.com)</li>
+          <li>System keyboard/mouse AFK presence (active vs idle)</li>
+          <li>LiteLLM AI tokens and query model names</li>
+          <li>Turnstile biometric punch IN/OUT timestamps</li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="font-semibold text-rose-400 mb-1">✗ What IS NEVER Collected</h4>
+        <ul class="list-disc list-inside space-y-1 text-slate-400">
+          <li>Keystrokes, passwords, or secret credentials</li>
+          <li>Screen recordings, webcam, or microphone feeds</li>
+          <li>Private/Incognito browsing window details</li>
+          <li>Personal files outside registered dev directories</li>
+        </ul>
+      </div>
+
+      <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-[11px] text-slate-400">
+        <p><b>Local Outbox & Redaction:</b> All data is processed through local regex scrubbers on your laptop before transmission. Ingest is strictly TLS encrypted.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Consent Modal (Shown once if not consented) -->
+  <div id="consent-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+        <i data-lucide="file-text" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-semibold text-white">Pilot Telemetry & AI Policy Notice</h3>
+        <p class="text-xs text-slate-400 mt-1">Please review and confirm your participation in the Stage A/B pilot.</p>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-lg border border-slate-800">
+        I acknowledge that workstation focus time and enterprise AI proxy calls are recorded to automate day-end reporting, calculate utilization metrics, and enforce security policies (R01-R07). Passwords and private browsing are stripped locally.
+      </p>
+      <button onclick="acceptConsent()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs py-2.5 rounded-lg transition">
+        I Acknowledge & Consent
+      </button>
+    </div>
+  </div>
+
+  <!-- Client-side Logic Script -->
+  <script>
+    let currentPersonId = "22222222-2222-2222-2222-222222222224"; // Vikram Joshi (Intern) default
+    let currentFlagId = null;
+
+    async function init() {
+      lucide.createIcons();
+      await checkConsentStatus();
+      await loadPersonData();
+      await loadFlags();
+      await loadProjects();
+      await loadCockpit();
+    }
+
+    async function changePersona(personId) {
+      currentPersonId = personId;
+      await checkConsentStatus();
+      await loadPersonData();
+      await loadFlags();
+      await loadCockpit();
+    }
+
+    function switchTab(tabName) {
+      const tabs = ['my-day', 'discrepancies', 'projects', 'day-end', 'cockpit'];
+      tabs.forEach(t => {
+        document.getElementById(`section-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tab-${t}`);
+        btn.classList.remove('bg-indigo-600', 'text-white');
+        btn.classList.add('text-slate-400');
+      });
+      document.getElementById(`section-${tabName}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-${tabName}`);
+      activeBtn.classList.add('bg-indigo-600', 'text-white');
+      activeBtn.classList.remove('text-slate-400');
+
+      if (tabName === 'day-end') loadDayEndPrefill();
+    }
+
+    async function loadPersonData() {
+      try {
+        const res = await fetch(`/api/v1/timelines/${currentPersonId}`);
+        const data = await res.json();
+        
+        document.getElementById('current-user-name').innerText = data.person.full_name;
+        document.getElementById('current-user-role').innerText = data.person.role;
+
+        // KPI cards
+        const m = data.metrics;
+        document.getElementById('kpi-active-hours').innerText = m.active_hours;
+        document.getElementById('kpi-office-hours').innerText = m.office_hours;
+        document.getElementById('kpi-utilization').innerText = `${m.utilization_percentage}%`;
+        document.getElementById('kpi-ai-spend').innerText = `$${m.ai_spend_usd.toFixed(4)}`;
+        document.getElementById('kpi-ai-tokens').innerText = `(${m.ai_tokens_count} tokens)`;
+
+        // Timeline bar rendering
+        renderTimelineBar(data.events);
+
+        // Event list
+        renderEventList(data.events);
+      } catch (e) {
+        console.error("Error loading timeline:", e);
+      }
+    }
+
+    function renderTimelineBar(events) {
+      const bar = document.getElementById('timeline-bar-container');
+      bar.innerHTML = '';
+      if (!events || events.length === 0) return;
+
+      // Base 09:00 to 19:00 = 10 hours = 600 minutes
+      events.forEach(ev => {
+        const d = new Date(ev.timestamp);
+        const startMins = d.getHours() * 60 + d.getMinutes();
+        const baseStart = 9 * 60; // 09:00
+        const totalDuration = 10 * 60; // 10 hrs
+        
+        const offsetPct = Math.max(0, Math.min(100, ((startMins - baseStart) / totalDuration) * 100));
+        const widthPct = Math.max(1.5, Math.min(100, ((ev.duration_seconds / 60) / totalDuration) * 100));
+
+        let color = 'bg-indigo-500';
+        if (ev.source === 'biometric_punch') color = 'bg-emerald-500';
+        else if (ev.source === 'ai_call') color = 'bg-purple-500';
+        else if (ev.payload?.is_afk) color = 'bg-amber-500';
+        else if (ev.payload?.is_unapproved_ai) color = 'bg-red-500';
+
+        const chunk = document.createElement('div');
+        chunk.className = `absolute h-full ${color} timeline-bar-chunk rounded-sm`;
+        chunk.style.left = `${offsetPct}%`;
+        chunk.style.width = `${widthPct}%`;
+        chunk.title = `${ev.summary} (${Math.round(ev.duration_seconds / 60)} min)`;
+        bar.appendChild(chunk);
+      });
+    }
+
+    function renderEventList(events) {
+      const list = document.getElementById('timeline-event-list');
+      list.innerHTML = '';
+      events.forEach(ev => {
+        const timeStr = new Date(ev.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        let iconName = 'laptop';
+        let badgeColor = 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20';
+
+        if (ev.source === 'biometric_punch') {
+          iconName = 'door-closed';
+          badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        } else if (ev.source === 'ai_call') {
+          iconName = 'sparkles';
+          badgeColor = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+        } else if (ev.payload?.is_afk) {
+          iconName = 'coffee';
+          badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        } else if (ev.payload?.is_unapproved_ai) {
+          iconName = 'alert-triangle';
+          badgeColor = 'bg-red-500/10 text-red-400 border-red-500/20';
+        }
+
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/80 text-xs';
+        item.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <span class="font-mono text-slate-500 text-[11px]">${timeStr}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase border ${badgeColor}">${ev.category}</span>
+            <span class="text-slate-200 font-medium">${ev.summary}</span>
+          </div>
+          <span class="text-slate-500 font-mono text-[11px]">${Math.round(ev.duration_seconds / 60)}m</span>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    async function loadFlags() {
+      try {
+        const res = await fetch('/api/v1/flags');
+        const data = await res.json();
+        
+        document.getElementById('badge-open-flags').innerText = data.flags.filter(f => f.status === 'OPEN').length;
+
+        const container = document.getElementById('flags-container');
+        container.innerHTML = '';
+
+        data.flags.forEach(f => {
+          let sevColor = f.severity === 'HIGH' ? 'text-red-400 bg-red-500/10 border-red-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+          let statusBadge = f.status === 'OPEN' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400';
+
+          const card = document.createElement('div');
+          card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-3';
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="px-2 py-0.5 rounded text-xs font-bold border ${sevColor}">${f.rule_code}</span>
+                <span class="text-xs font-semibold text-white">${f.title}</span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${statusBadge}">${f.status}</span>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">${f.description}</p>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+              <span class="text-slate-500 font-mono text-[11px]">User: ${f.person_name} (${f.person_role})</span>
+              <button onclick="openEvidenceModal('${f.flag_id}')" class="text-indigo-400 hover:text-indigo-300 font-medium text-xs">View Evidence →</button>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) {
+        console.error("Error loading flags:", e);
+      }
+    }
+
+    async function openEvidenceModal(flagId) {
+      currentFlagId = flagId;
+      try {
+        const res = await fetch(`/api/v1/flags/${flagId}`);
+        const data = await res.json();
+        const f = data.flag;
+
+        document.getElementById('ev-rule-badge').innerText = f.rule_code;
+        document.getElementById('ev-title').innerText = `${f.title} - ${data.person.full_name}`;
+        document.getElementById('ev-description').innerText = f.description;
+        document.getElementById('ev-json').innerText = JSON.stringify(f.evidence_snapshot, null, 2);
+
+        document.getElementById('evidence-modal').classList.remove('hidden');
+      } catch (e) {
+        console.error("Error opening evidence:", e);
+      }
+    }
+
+    function closeEvidenceModal() {
+      document.getElementById('evidence-modal').classList.add('hidden');
+      currentFlagId = null;
+    }
+
+    async function resolveCurrentFlag(status) {
+      if (!currentFlagId) return;
+      const notes = document.getElementById('ev-explain-notes').value || `Status marked as ${status}`;
+      try {
+        await fetch(`/api/v1/flags/${currentFlagId}/resolve`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ status: status, resolution_notes: notes })
+        });
+        closeEvidenceModal();
+        await loadFlags();
+        await loadCockpit();
+      } catch (e) {
+        console.error("Error resolving flag:", e);
+      }
+    }
+
+    async function loadProjects() {
+      try {
+        const res = await fetch('/api/v1/projects');
+        const data = await res.json();
+        const container = document.getElementById('projects-container');
+        container.innerHTML = '';
+
+        data.projects.forEach(p => {
+          const isSerious = p.classification === 'Serious';
+          const tagColor = isSerious ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+
+          const card = document.createElement('div');
+          card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4';
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${tagColor}">${p.classification}</span>
+              <span class="text-xs font-mono text-slate-500">${p.code}</span>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-white">${p.name}</h3>
+              <p class="text-xs text-slate-400 mt-1">${p.description}</p>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-400">Monthly AI Spend</span>
+                <span class="text-white font-mono">$${p.current_spend_usd} / $${p.monthly_budget_usd}</span>
+              </div>
+              <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                <div class="bg-indigo-600 h-full rounded-full" style="width: ${Math.min(100, p.budget_utilization_pct)}%"></div>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+              <span>Allotted Team: ${p.allotted_members.join(', ')}</span>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (e) {
+        console.error("Error loading projects:", e);
+      }
+    }
+
+    async function loadDayEndPrefill() {
+      try {
+        const res = await fetch(`/api/v1/day-end/prefill/${currentPersonId}`);
+        const data = await res.json();
+
+        document.getElementById('de-active-hrs').innerText = `${data.total_active_hours} hrs`;
+        document.getElementById('de-top-app').innerText = data.top_apps[0]?.app || 'VS Code';
+        document.getElementById('de-ai-calls').innerText = `${data.ai_summary.total_requests} reqs ($${data.ai_summary.total_cost_usd})`;
+        document.getElementById('de-accomplishments').value = data.suggested_prefill.accomplishments;
+      } catch (e) {
+        console.error("Error loading prefill:", e);
+      }
+    }
+
+    async function submitDayEnd(e) {
+      e.preventDefault();
+      const payload = {
+        person_id: currentPersonId,
+        work_date: new Date().toISOString().split('T')[0],
+        accomplishments: document.getElementById('de-accomplishments').value,
+        blockers: document.getElementById('de-blockers').value
+      };
+      try {
+        const res = await fetch('/api/v1/day-end/submit', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const resp = await res.json();
+        alert("Day-end summary recorded successfully!");
+      } catch (err) {
+        alert("Failed to submit day-end summary");
+      }
+    }
+
+    async function loadCockpit() {
+      try {
+        const res = await fetch('/api/v1/metrics/cockpit');
+        const data = await res.json();
+
+        const tbody = document.getElementById('cockpit-table-body');
+        tbody.innerHTML = '';
+        data.team_metrics.forEach(t => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td class="p-2.5 font-sans font-semibold text-white">${t.person_name}</td>
+            <td class="p-2.5 text-slate-400 uppercase text-[10px]">${t.role}</td>
+            <td class="p-2.5 text-emerald-400">${t.active_hours}h</td>
+            <td class="p-2.5 text-blue-400">${t.office_hours}h</td>
+            <td class="p-2.5 font-bold ${t.utilization_percentage >= 70 ? 'text-indigo-400' : 'text-amber-400'}">${t.utilization_percentage}%</td>
+            <td class="p-2.5"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${t.open_flags_count > 0 ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}">${t.open_flags_count}</span></td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        const rulesBox = document.getElementById('cockpit-rules-breakdown');
+        rulesBox.innerHTML = '';
+        const flags = data.summary.flags_by_rule;
+        const ruleNames = {
+          'R01': 'Punch-in / No Laptop Activity',
+          'R02': 'Excess Workstation Idle Duration',
+          'R05': 'AI Requests Triggered While Idle',
+          'R07': 'Unapproved AI Tool / Route Usage'
+        };
+
+        for (const [r, count] of Object.entries(flags)) {
+          const item = document.createElement('div');
+          item.className = 'flex items-center justify-between p-3 rounded-lg bg-slate-950 border border-slate-800';
+          item.innerHTML = `
+            <div>
+              <p class="font-bold text-white">${r}: ${ruleNames[r] || r}</p>
+              <p class="text-[10px] text-slate-500">Automated Intelligence Rule</p>
+            </div>
+            <span class="text-sm font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20">${count}</span>
+          `;
+          rulesBox.appendChild(item);
+        }
+      } catch (e) {
+        console.error("Error loading cockpit:", e);
+      }
+    }
+
+    async function checkConsentStatus() {
+      try {
+        const res = await fetch(`/api/v1/consent/${currentPersonId}`);
+        const data = await res.json();
+        if (!data.has_consented) {
+          document.getElementById('consent-modal').classList.remove('hidden');
+        } else {
+          document.getElementById('consent-modal').classList.add('hidden');
+        }
+      } catch (e) {}
+    }
+
+    async function acceptConsent() {
+      try {
+        await fetch('/api/v1/consent', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ person_id: currentPersonId, policy_version: 'v1.0-pilot' })
+        });
+        document.getElementById('consent-modal').classList.add('hidden');
+      } catch (e) {}
+    }
+
+    function toggleTransparencyDrawer() {
+      const drawer = document.getElementById('transparency-drawer');
+      drawer.classList.toggle('translate-x-full');
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>

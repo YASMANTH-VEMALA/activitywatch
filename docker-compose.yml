@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  # ══════════════════════════════════════════════════════════
+  # 1. CENTRAL DATABASE: PostgreSQL with pgvector & TimescaleDB
+  # ══════════════════════════════════════════════════════════
+  postgres:
+    image: timescale/timescaledb-ha:pg16
+    container_name: aw_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-activitywatch_enterprise}
+      POSTGRES_USER: ${POSTGRES_USER:-aw_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin_secure_pass_123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./server/db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./server/db/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aw_admin} -d ${POSTGRES_DB:-activitywatch_enterprise}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ══════════════════════════════════════════════════════════
+  # 2. LITELLM: AI Gateway, Virtual Keys, Budgets & Rate Limits
+  # ══════════════════════════════════════════════════════════
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: aw_litellm
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-aw_admin}:${POSTGRES_PASSWORD:-admin_secure_pass_123}@postgres:5432/${POSTGRES_DB:-activitywatch_enterprise}"
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-master-key-pilot-stage-a}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-mock}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-mock}
+      LANGFUSE_HOST: "http://langfuse-web:3000"
+    volumes:
+      - ./deploy/litellm_config.yaml:/app/config.yaml
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ══════════════════════════════════════════════════════════
+  # 3. LANGFUSE: LLM Observability, Tracing, Cost Auditing
+  # ══════════════════════════════════════════════════════════
+  langfuse-web:
+    image: langfuse/langfuse:2
+    container_name: aw_langfuse
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-aw_admin}:${POSTGRES_PASSWORD:-admin_secure_pass_123}@postgres:5432/${POSTGRES_DB:-activitywatch_enterprise}"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-langfuse_secret_pilot_phase}
+      SALT: ${SALT:-langfuse_salt_pilot_phase}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ══════════════════════════════════════════════════════════
+  # 4. FASTAPI BACKEND: Ingest API, Core APIs, Rules & Timeline
+  # ══════════════════════════════════════════════════════════
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: aw_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-aw_admin}:${POSTGRES_PASSWORD:-admin_secure_pass_123}@postgres:5432/${POSTGRES_DB:-activitywatch_enterprise}"
+      LITELLM_URL: "http://litellm:4000"
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-master-key-pilot-stage-a}
+      SECRET_KEY: ${BACKEND_SECRET_KEY:-pilot_jwt_secret_token_123}
+      TIMEZONE: "Asia/Kolkata"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ══════════════════════════════════════════════════════════
+  # 5. METABASE: One basic cockpit view (Utilisation + Flags + AI spend)
+  # ══════════════════════════════════════════════════════════
+  metabase:
+    image: metabase/metabase:latest
+    container_name: aw_metabase
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: ${POSTGRES_DB:-activitywatch_enterprise}
+      MB_DB_PORT: 5432
+      MB_DB_USER: ${POSTGRES_USER:-aw_admin}
+      MB_DB_PASS: ${POSTGRES_PASSWORD:-admin_secure_pass_123}
+      MB_DB_HOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ══════════════════════════════════════════════════════════
+  # 6. CADDY REVERSE PROXY: Single Entrypoint, TLS & Routing
+  # ══════════════════════════════════════════════════════════
+  caddy:
+    image: caddy:2-alpine
+    container_name: aw_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - litellm
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

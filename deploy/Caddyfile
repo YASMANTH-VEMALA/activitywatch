@@ -1,0 +1,44 @@
+{
+    # Global options
+    auto_https off # Set to production domain for auto Let's Encrypt
+}
+
+:80 {
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+
+    # API Backend (Ingest, Timelines, Flags, Day-End)
+    handle /api/* {
+        reverse_proxy backend:8000
+    }
+
+    handle /v1/ingest* {
+        reverse_proxy backend:8000
+    }
+
+    handle /v1/punches* {
+        reverse_proxy backend:8000
+    }
+
+    # LiteLLM AI Gateway
+    handle /v1/chat/completions* {
+        reverse_proxy litellm:4000
+    }
+
+    handle /v1/models* {
+        reverse_proxy litellm:4000
+    }
+
+    # Metabase Cockpit
+    handle /metabase/* {
+        reverse_proxy metabase:3000
+    }
+
+    # Web Application Frontend (fallback)
+    handle {
+        reverse_proxy backend:8000
+    }
+}
