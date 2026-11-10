@@ -1,15 +1,17 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
 
-UNAPPROVED_AI_DOMAINS = [
-    "chatgpt.com",
-    "chat.openai.com",
-    "claude.ai",
-    "deepseek.com",
+UNAPPROVED_AI_KEYWORDS = [
+    "chatgpt",
+    "openai",
+    "claude",
+    "deepseek",
     "poe.com",
-    "perplexity.ai"
+    "perplexity",
+    "mistral",
+    "gemini.google.com"
 ]
 
 def extract_domain(url_or_title: Optional[str]) -> Optional[str]:
@@ -26,11 +28,9 @@ def extract_domain(url_or_title: Optional[str]) -> Optional[str]:
         return match.group(1).lower()
     return None
 
-def is_unapproved_ai_domain(domain_or_title: Optional[str]) -> bool:
-    if not domain_or_title:
-        return False
-    lower = domain_or_title.lower()
-    return any(unapproved in lower for unapproved in UNAPPROVED_AI_DOMAINS)
+def is_unapproved_ai_content(app_name: Optional[str], window_title: Optional[str], url_or_domain: Optional[str]) -> bool:
+    content = f"{app_name or ''} {window_title or ''} {url_or_domain or ''}".lower()
+    return any(keyword in content for keyword in UNAPPROVED_AI_KEYWORDS)
 
 class SpanBuilder:
     """
@@ -85,14 +85,20 @@ class SpanBuilder:
             if not matched_domain:
                 matched_domain = extract_domain(window_title)
 
-            # Check if this span intersected with AFK
-            is_afk = False
+            # Check overlap with AFK intervals
+            afk_seconds = 0.0
             for afk in afk_intervals:
-                if afk["is_afk"] and max(start_time, afk["start"]) < min(end_time, afk["end"]):
-                    is_afk = True
-                    break
+                if afk["is_afk"]:
+                    overlap_start = max(start_time, afk["start"])
+                    overlap_end = min(end_time, afk["end"])
+                    if overlap_start < overlap_end:
+                        afk_seconds += (overlap_end - overlap_start).total_seconds()
 
-            unapproved = is_unapproved_ai_domain(matched_domain) or is_unapproved_ai_domain(window_title)
+            # If AFK overlap is at least 50% of event duration, mark as AFK
+            is_afk = (afk_seconds >= (duration * 0.5)) if afk_intervals else False
+
+            # Check unapproved consumer AI
+            unapproved = is_unapproved_ai_content(app_name, window_title, matched_domain or matched_url)
 
             category = "Development" if any(k in app_name.lower() for k in ["code", "terminal", "idea", "pycharm", "git"]) else "General"
             if unapproved:

@@ -168,30 +168,44 @@ class RuleEngine:
         # RULE R07: Unapproved AI Tool
         # -------------------------------------------------------------
         # 1. Check activity spans for blacklisted AI sites (ChatGPT, Claude web, etc.)
-        for s in activity_spans:
-            if s.get("is_unapproved_ai", False):
-                flags.append({
-                    "flag_id": str(uuid.uuid4()),
-                    "person_id": person_id,
-                    "rule_code": "R07",
-                    "title": "Unapproved External AI Tool Accessed",
-                    "description": (
-                        f"Detected access to unauthorized consumer AI portal '{s.get('url_domain') or s.get('window_title')}' "
-                        f"on application '{s.get('app_name')}'. Enterprise tools must route via LiteLLM."
-                    ),
-                    "severity": "MEDIUM",
-                    "status": "OPEN",
-                    "target_date": target_date,
-                    "evidence_snapshot": {
-                        "rule": "R07",
-                        "app_name": s.get("app_name"),
-                        "window_title": s.get("window_title"),
-                        "url": s.get("url"),
-                        "domain": s.get("url_domain"),
-                        "timestamp": s["start_time"].isoformat()
-                    }
-                })
-                break # 1 flag per day is sufficient to avoid cluttering
+        unapproved_spans = [s for s in activity_spans if s.get("is_unapproved_ai", False)]
+        if unapproved_spans:
+            total_unapproved_seconds = sum(s.get("duration_seconds", 0) for s in unapproved_spans)
+            first_span = unapproved_spans[0]
+            detected_target = first_span.get("url_domain") or first_span.get("window_title") or first_span.get("app_name")
+            flags.append({
+                "flag_id": str(uuid.uuid4()),
+                "person_id": person_id,
+                "rule_code": "R07",
+                "title": "Unapproved External AI Tool Accessed",
+                "description": (
+                    f"Detected access to unauthorized consumer AI portal '{detected_target}' "
+                    f"for {total_unapproved_seconds / 60.0:.1f} minutes on application '{first_span.get('app_name')}'. "
+                    f"Enterprise AI workflows must route via authorized LiteLLM proxy."
+                ),
+                "severity": "MEDIUM",
+                "status": "OPEN",
+                "target_date": target_date,
+                "evidence_snapshot": {
+                    "rule": "R07",
+                    "total_duration_minutes": round(total_unapproved_seconds / 60.0, 1),
+                    "app_name": first_span.get("app_name"),
+                    "window_title": first_span.get("window_title"),
+                    "url": first_span.get("url"),
+                    "domain": first_span.get("url_domain"),
+                    "first_seen_timestamp": first_span["start_time"].isoformat(),
+                    "total_instances_count": len(unapproved_spans),
+                    "instances": [
+                        {
+                            "app": s.get("app_name"),
+                            "title": s.get("window_title"),
+                            "duration_seconds": round(s.get("duration_seconds", 0), 1),
+                            "timestamp": s["start_time"].isoformat()
+                        }
+                        for s in unapproved_spans[:10]
+                    ]
+                }
+            })
 
         # 2. Check if any AI call was flagged as unapproved tool
         for a in ai_logs:

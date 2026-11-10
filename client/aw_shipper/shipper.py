@@ -54,13 +54,22 @@ class HTTPShipper:
         except Exception:
             return False
 
-    def flush_outbox(self):
-        pending = self.outbox.get_pending_batches(limit=10)
-        for item in pending:
-            success = self.send_batch(item["payload"])
-            if success:
-                self.outbox.remove_batch(item["id"])
-            else:
-                self.outbox.increment_retry(item["id"])
-                break # Stop processing queue until network connectivity is restored
+    def flush_outbox(self) -> int:
+        sent_count = 0
+        while True:
+            pending = self.outbox.get_pending_batches(limit=10)
+            if not pending:
+                break
+            for item in pending:
+                success = self.send_batch(item["payload"])
+                if success:
+                    self.outbox.remove_batch(item["id"])
+                    events_count = len(item["payload"].get("events", []))
+                    sent_count += events_count
+                    print(f"  [✓] Forwarded batch #{item['id']} ({events_count} events to central platform)")
+                else:
+                    self.outbox.increment_retry(item["id"])
+                    print(f"  [!] Failed to forward batch #{item['id']}, will retry...")
+                    return sent_count
+        return sent_count
 

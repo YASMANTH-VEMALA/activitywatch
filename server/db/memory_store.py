@@ -27,6 +27,19 @@ class StateStore:
         self.consent_logs: List[Dict[str, Any]] = []
         self._seed_pilot_state()
 
+    def reset(self):
+        self.raw_events.clear()
+        self.activity_spans.clear()
+        self.unified_timeline.clear()
+        self.ai_usage_logs.clear()
+        self.discrepancy_flags.clear()
+        self.day_records.clear()
+        self.day_end_updates.clear()
+        self.biometric_punches.clear()
+        self.people.clear()
+        self.devices.clear()
+        self._seed_pilot_state()
+
     def _seed_pilot_state(self):
         # 1. Default Policy
         policy_id = "11111111-1111-1111-1111-111111111111"
@@ -41,16 +54,18 @@ class StateStore:
             "approved_ai_tools": ["litellm", "internal-portal", "claude-team"]
         }
 
-        # 2. Primary Live Laptop Profile (Will receive your real ActivityWatch data)
+        # 2. Primary Live Laptop Profile
         primary_id = "live-laptop-01"
         self.people[primary_id] = {
             "person_id": primary_id,
             "email": "laptop@pilot.local",
             "full_name": "My Laptop (Live)",
-            "role": "Active User",
+            "role": "Active Pilot User",
             "department": "Engineering",
             "manager_id": None
         }
+        self.devices["live-laptop-01"] = {"device_id": "live-laptop-01", "person_id": primary_id, "device_name": "My Laptop"}
+        self.devices["dev-pilot-laptop-01"] = {"device_id": "dev-pilot-laptop-01", "person_id": primary_id, "device_name": "dev-pilot-laptop-01"}
 
         # 3. Default Projects
         prj_apollo = "33333333-3333-3333-3333-333333333331"
@@ -61,12 +76,8 @@ class StateStore:
             "classification": "Serious",
             "description": "Primary Project",
             "monthly_budget_usd": 1000.00,
-            "allotted_members": ["My Laptop (Live)"]
+            "allotted_members": ["Engineering Team"]
         }
-
-        # Devices mapped to the live laptop
-        self.devices["dev-pilot-laptop-01"] = {"device_id": "dev-pilot-laptop-01", "person_id": primary_id, "device_name": "My Laptop"}
-        self.devices["laptop-01"] = {"device_id": "laptop-01", "person_id": primary_id, "device_name": "My Laptop"}
 
     def generate_pilot_scenarios(self, target_date: date):
         """

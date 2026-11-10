@@ -30,19 +30,16 @@ async def ingest_activitywatch_events(
 
     device = store.devices.get(batch.device_id)
     if not device:
-        # Check if primary live laptop exists, else create one for this device
-        person_id = "live-laptop-01"
-        if person_id in store.people:
-            store.people[person_id]["full_name"] = f"My Laptop ({batch.device_id})"
-        else:
-            store.people[person_id] = {
-                "person_id": person_id,
-                "email": f"{batch.device_id}@pilot.local",
-                "full_name": f"My Laptop ({batch.device_id})",
-                "role": "Active User",
-                "department": "Engineering",
-                "manager_id": None
-            }
+        # Create dedicated person profile for each distinct physical device
+        person_id = f"person-{batch.device_id}"
+        store.people[person_id] = {
+            "person_id": person_id,
+            "email": f"{batch.device_id}@pilot.local",
+            "full_name": f"Laptop ({batch.device_id})",
+            "role": "Active Pilot User",
+            "department": "Engineering",
+            "manager_id": None
+        }
         device = {
             "device_id": batch.device_id,
             "person_id": person_id,
@@ -51,40 +48,50 @@ async def ingest_activitywatch_events(
         }
         store.devices[batch.device_id] = device
 
+    # Deduplicate raw events by (device_id, bucket_id, aw_event_id/timestamp)
+    existing_event_keys = {
+        (e["device_id"], e["bucket_id"], e.get("aw_event_id") or str(e["timestamp"]))
+        for e in store.raw_events
+        if e["device_id"] == batch.device_id
+    }
+
     inserted = 0
-    raw_window_events = []
-    raw_afk_events = []
-    raw_web_events = []
-
     for ev in batch.events:
-        item = {
-            "device_id": batch.device_id,
-            "bucket_id": batch.bucket_id,
-            "aw_event_id": ev.id,
-            "timestamp": ev.timestamp,
-            "duration": ev.duration,
-            "data": ev.data
-        }
-        store.raw_events.append(item)
-        inserted += 1
+        event_key = (batch.device_id, batch.bucket_id, ev.id or str(ev.timestamp))
+        if event_key not in existing_event_keys:
+            item = {
+                "device_id": batch.device_id,
+                "bucket_id": batch.bucket_id,
+                "aw_event_id": ev.id,
+                "timestamp": ev.timestamp,
+                "duration": ev.duration,
+                "data": ev.data
+            }
+            store.raw_events.append(item)
+            existing_event_keys.add(event_key)
+            inserted += 1
 
-        if "window" in batch.bucket_id:
-            raw_window_events.append(item)
-        elif "afk" in batch.bucket_id:
-            raw_afk_events.append(item)
-        elif "web" in batch.bucket_id:
-            raw_web_events.append(item)
+    # Reconstruct normalized spans for this device from ALL accumulated raw events
+    all_windows = [e for e in store.raw_events if e["device_id"] == batch.device_id and "window" in e["bucket_id"]]
+    all_afks = [e for e in store.raw_events if e["device_id"] == batch.device_id and "afk" in e["bucket_id"]]
+    all_webs = [e for e in store.raw_events if e["device_id"] == batch.device_id and "web" in e["bucket_id"]]
 
-    # Immediately build normalized spans if window events exist
-    if raw_window_events:
-        new_spans = SpanBuilder.build_spans_from_events(
+    if all_windows:
+        reconstructed_spans = SpanBuilder.build_spans_from_events(
             person_id=device["person_id"],
             device_id=batch.device_id,
-            window_events=raw_window_events,
-            afk_events=raw_afk_events,
-            web_events=raw_web_events
+            window_events=all_windows,
+            afk_events=all_afks,
+            web_events=all_webs
         )
-        store.activity_spans.extend(new_spans)
+        # Replace existing spans for this device with the clean, deduplicated set
+        store.activity_spans = [
+            s for s in store.activity_spans if s.get("device_id") != batch.device_id
+        ] + reconstructed_spans
+
+    # Immediate flag evaluation for this person
+    from api.flags import evaluate_flags_for_all
+    evaluate_flags_for_all()
 
     return IngestResponse(
         status="success",
@@ -93,6 +100,13 @@ async def ingest_activitywatch_events(
         received_count=len(batch.events),
         inserted_count=inserted
     )
+
+@router.post("/api/v1/reset")
+@router.get("/api/v1/reset")
+async def reset_telemetry_store():
+    """Wipes in-memory telemetry, spans, and duplicate events for a clean slate."""
+    store.reset()
+    return {"status": "success", "message": "Telemetry store reset successfully. Awaiting fresh events from edge laptops."}
 
 @router.post("/v1/heartbeat")
 async def device_heartbeat(

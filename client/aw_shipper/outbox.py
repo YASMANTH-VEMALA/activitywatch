@@ -108,3 +108,13 @@ class SQLiteOutbox:
             conn.commit()
         finally:
             conn.close()
+
+    def reset(self):
+        """Clears local cursor checkpoints and pending queue to force a clean full-day sync."""
+        conn = sqlite3.connect(self.db_path)
+        try:
+            conn.execute("DELETE FROM outbox_queue")
+            conn.execute("DELETE FROM cursors")
+            conn.commit()
+        finally:
+            conn.close()
