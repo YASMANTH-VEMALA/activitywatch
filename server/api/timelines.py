@@ -7,6 +7,21 @@ from workers.metrics import MetricsCalculator
 
 router = APIRouter(prefix="/api/v1/timelines", tags=["Timelines"])
 
+@router.get("/people/list")
+async def list_available_people():
+    """Returns dynamic list of all registered devices/people."""
+    people_list = []
+    for p_id, p in store.people.items():
+        # Find associated device
+        dev_name = next((d["device_name"] for d in store.devices.values() if d.get("person_id") == p_id), "Unknown")
+        people_list.append({
+            "person_id": p_id,
+            "full_name": p.get("full_name", p_id),
+            "role": p.get("role", "User"),
+            "device_name": dev_name
+        })
+    return {"people": people_list}
+
 @router.get("/{person_id}")
 async def get_person_timeline(
     person_id: str,
@@ -54,3 +69,4 @@ async def get_person_timeline(
         "event_count": len(unified_events),
         "events": unified_events
     }
+

@@ -28,7 +28,7 @@ class StateStore:
         self._seed_pilot_state()
 
     def _seed_pilot_state(self):
-        # 1. Policy
+        # 1. Default Policy
         policy_id = "11111111-1111-1111-1111-111111111111"
         self.tracking_policies[policy_id] = {
             "policy_id": policy_id,
@@ -41,33 +41,32 @@ class StateStore:
             "approved_ai_tools": ["litellm", "internal-portal", "claude-team"]
         }
 
-        # 2. People (Priya, Rohan, Ananya, Vikram)
-        p_priya = "22222222-2222-2222-2222-222222222221"
-        p_rohan = "22222222-2222-2222-2222-222222222222"
-        p_ananya = "22222222-2222-2222-2222-222222222223"
-        p_vikram = "22222222-2222-2222-2222-222222222224"
+        # 2. Primary Live Laptop Profile (Will receive your real ActivityWatch data)
+        primary_id = "live-laptop-01"
+        self.people[primary_id] = {
+            "person_id": primary_id,
+            "email": "laptop@pilot.local",
+            "full_name": "My Laptop (Live)",
+            "role": "Active User",
+            "department": "Engineering",
+            "manager_id": None
+        }
 
-        self.people[p_priya] = {"person_id": p_priya, "email": "priya.sharma@example.com", "full_name": "Priya Sharma", "role": "lead", "department": "Engineering", "manager_id": None}
-        self.people[p_rohan] = {"person_id": p_rohan, "email": "rohan.mehta@example.com", "full_name": "Rohan Mehta", "role": "employee", "department": "Engineering", "manager_id": p_priya}
-        self.people[p_ananya] = {"person_id": p_ananya, "email": "ananya.patel@example.com", "full_name": "Ananya Patel", "role": "employee", "department": "Engineering", "manager_id": p_priya}
-        self.people[p_vikram] = {"person_id": p_vikram, "email": "vikram.joshi@example.com", "full_name": "Vikram Joshi", "role": "intern", "department": "Engineering", "manager_id": p_rohan}
-
-        # 3. Projects
+        # 3. Default Projects
         prj_apollo = "33333333-3333-3333-3333-333333333331"
-        prj_omni = "33333333-3333-3333-3333-333333333332"
-        prj_sandbox = "33333333-3333-3333-3333-333333333333"
+        self.projects[prj_apollo] = {
+            "project_id": prj_apollo,
+            "name": "Apollo Core Engine",
+            "code": "PRJ-APOLLO",
+            "classification": "Serious",
+            "description": "Primary Project",
+            "monthly_budget_usd": 1000.00,
+            "allotted_members": ["My Laptop (Live)"]
+        }
 
-        self.projects[prj_apollo] = {"project_id": prj_apollo, "name": "Apollo Core Engine", "code": "PRJ-APOLLO", "classification": "Serious", "description": "High-throughput real-time ingest engine", "monthly_budget_usd": 1200.00, "allotted_members": ["Priya Sharma", "Rohan Mehta"]}
-        self.projects[prj_omni] = {"project_id": prj_omni, "name": "OmniSearch Agent", "code": "PRJ-OMNI", "classification": "Serious", "description": "Enterprise semantic vector copilot", "monthly_budget_usd": 800.00, "allotted_members": ["Ananya Patel"]}
-        self.projects[prj_sandbox] = {"project_id": prj_sandbox, "name": "Neural Sandbox Exploration", "code": "PRJ-SANDBOX", "classification": "Research", "description": "Experimental agentic synthetic workflows", "monthly_budget_usd": 300.00, "allotted_members": ["Vikram Joshi"]}
-
-        # 4. Devices
-        self.devices["dev-rohan-thinkpad"] = {"device_id": "dev-rohan-thinkpad", "person_id": p_rohan, "device_name": "Rohan ThinkPad X1"}
-        self.devices["dev-ananya-dell"] = {"device_id": "dev-ananya-dell", "person_id": p_ananya, "device_name": "Ananya Dell XPS 15"}
-        self.devices["dev-vikram-asus"] = {"device_id": "dev-vikram-asus", "person_id": p_vikram, "device_name": "Vikram Asus ZenBook"}
-
-        # 5. Populate Sample Simulation for Today
-        self.generate_pilot_scenarios(date.today())
+        # Devices mapped to the live laptop
+        self.devices["dev-pilot-laptop-01"] = {"device_id": "dev-pilot-laptop-01", "person_id": primary_id, "device_name": "My Laptop"}
+        self.devices["laptop-01"] = {"device_id": "laptop-01", "person_id": primary_id, "device_name": "My Laptop"}
 
     def generate_pilot_scenarios(self, target_date: date):
         """
@@ -76,6 +75,10 @@ class StateStore:
         p_rohan = "22222222-2222-2222-2222-222222222222"
         p_ananya = "22222222-2222-2222-2222-222222222223"
         p_vikram = "22222222-2222-2222-2222-222222222224"
+
+        self.people[p_rohan] = {"person_id": p_rohan, "email": "rohan@pilot.local", "full_name": "Rohan Mehta", "role": "employee", "department": "Engineering"}
+        self.people[p_ananya] = {"person_id": p_ananya, "email": "ananya@pilot.local", "full_name": "Ananya Patel", "role": "employee", "department": "Engineering"}
+        self.people[p_vikram] = {"person_id": p_vikram, "email": "vikram@pilot.local", "full_name": "Vikram Joshi", "role": "intern", "department": "Engineering"}
 
         base_dt = datetime.combine(target_date, time(9, 30))
 
@@ -154,3 +157,4 @@ class StateStore:
 
 # Global singleton state store
 store = StateStore()
+

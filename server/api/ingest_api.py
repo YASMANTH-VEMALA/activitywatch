@@ -30,11 +30,24 @@ async def ingest_activitywatch_events(
 
     device = store.devices.get(batch.device_id)
     if not device:
-        # Auto-register pilot device if not present
+        # Check if primary live laptop exists, else create one for this device
+        person_id = "live-laptop-01"
+        if person_id in store.people:
+            store.people[person_id]["full_name"] = f"My Laptop ({batch.device_id})"
+        else:
+            store.people[person_id] = {
+                "person_id": person_id,
+                "email": f"{batch.device_id}@pilot.local",
+                "full_name": f"My Laptop ({batch.device_id})",
+                "role": "Active User",
+                "department": "Engineering",
+                "manager_id": None
+            }
         device = {
             "device_id": batch.device_id,
-            "person_id": list(store.people.keys())[0],
-            "device_name": f"Auto-Registered {batch.device_id}"
+            "person_id": person_id,
+            "device_name": batch.device_id,
+            "last_heartbeat": datetime.utcnow().isoformat()
         }
         store.devices[batch.device_id] = device
 
@@ -89,3 +102,16 @@ async def device_heartbeat(
     if device_id in store.devices:
         store.devices[device_id]["last_heartbeat"] = datetime.utcnow().isoformat()
     return {"status": "ok", "device_id": device_id, "timestamp": datetime.utcnow().isoformat()}
+
+@router.get("/v1/models")
+async def list_ai_models():
+    """Exposes LiteLLM compatible models list for IDEs and clients."""
+    return {
+        "object": "list",
+        "data": [
+            {"id": "gpt-4o", "object": "model", "created": 1715500000, "owned_by": "openai"},
+            {"id": "claude-3-5-sonnet", "object": "model", "created": 1715500000, "owned_by": "anthropic"},
+            {"id": "gemini-1.5-pro", "object": "model", "created": 1715500000, "owned_by": "google"}
+        ]
+    }
+

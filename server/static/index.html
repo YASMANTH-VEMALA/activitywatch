@@ -46,10 +46,7 @@
         <p id="current-user-role" class="text-[10px] text-slate-400 uppercase tracking-wider">Role</p>
       </div>
       <select id="persona-select" onchange="changePersona(this.value)" class="bg-slate-800 border border-slate-700 text-xs text-white rounded-md px-3 py-1.5 focus:outline-none focus:border-indigo-500">
-        <option value="22222222-2222-2222-2222-222222222224">Vikram Joshi (Intern - R01, R07)</option>
-        <option value="22222222-2222-2222-2222-222222222223">Ananya Patel (ML Eng - R02, R05)</option>
-        <option value="22222222-2222-2222-2222-222222222222">Rohan Mehta (Core Dev - Clean)</option>
-        <option value="22222222-2222-2222-2222-222222222221">Priya Sharma (Team Lead)</option>
+        <option value="live-laptop-01">💻 My Laptop (Live)</option>
       </select>
     </div>
   </header>
@@ -358,16 +355,49 @@
 
   <!-- Client-side Logic Script -->
   <script>
-    let currentPersonId = "22222222-2222-2222-2222-222222222224"; // Vikram Joshi (Intern) default
+    let currentPersonId = "live-laptop-01"; // Default to your live laptop
     let currentFlagId = null;
 
     async function init() {
       lucide.createIcons();
+      await loadPeopleDropdown();
       await checkConsentStatus();
       await loadPersonData();
       await loadFlags();
       await loadProjects();
       await loadCockpit();
+
+      // Auto-refresh every 15 seconds for live telemetry updates
+      setInterval(async () => {
+        await loadPeopleDropdown();
+        await loadPersonData();
+        await loadFlags();
+      }, 15000);
+    }
+
+    async function loadPeopleDropdown() {
+      try {
+        const res = await fetch('/api/v1/timelines/people/list');
+        const data = await res.json();
+        const select = document.getElementById('persona-select');
+        const existing = select.value;
+        select.innerHTML = '';
+        data.people.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.person_id;
+          opt.innerText = p.full_name;
+          select.appendChild(opt);
+        });
+        if (existing && data.people.some(p => p.person_id === existing)) {
+          select.value = existing;
+          currentPersonId = existing;
+        } else if (data.people.length > 0) {
+          select.value = data.people[0].person_id;
+          currentPersonId = data.people[0].person_id;
+        }
+      } catch (e) {
+        console.error("Error loading people list:", e);
+      }
     }
 
     async function changePersona(personId) {
@@ -719,3 +749,4 @@
   </script>
 </body>
 </html>
+
