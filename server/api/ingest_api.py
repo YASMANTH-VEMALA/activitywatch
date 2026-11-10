@@ -30,13 +30,20 @@ async def ingest_activitywatch_events(
 
     device = store.devices.get(batch.device_id)
     if not device:
+        # Inspect bucket_id for edge laptop hostname (e.g. aw-watcher-window_SSKL8734)
+        if "SSKL8734" in (batch.bucket_id + batch.device_id):
+            device = store.devices.get("SSKL8734")
+        elif "5FTFGVC" in (batch.bucket_id + batch.device_id):
+            device = store.devices.get("DESKTOP-5FTFGVC")
+
+    if not device:
         # Create dedicated person profile for each distinct physical device
         person_id = f"person-{batch.device_id}"
         store.people[person_id] = {
             "person_id": person_id,
             "email": f"{batch.device_id}@pilot.local",
-            "full_name": f"Laptop ({batch.device_id})",
-            "role": "Active Pilot User",
+            "full_name": f"💻 Laptop ({batch.device_id})",
+            "role": "Pilot Workstation",
             "department": "Engineering",
             "manager_id": None
         }

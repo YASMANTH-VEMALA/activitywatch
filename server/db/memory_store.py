@@ -54,18 +54,33 @@ class StateStore:
             "approved_ai_tools": ["litellm", "internal-portal", "claude-team"]
         }
 
-        # 2. Primary Live Laptop Profile
-        primary_id = "live-laptop-01"
-        self.people[primary_id] = {
-            "person_id": primary_id,
-            "email": "laptop@pilot.local",
-            "full_name": "My Laptop (Live)",
-            "role": "Active Pilot User",
+        # 2. Pilot Workstations Setup
+        # Laptop 1: Local Laptop (Host Machine)
+        local_id = "laptop-01-local"
+        self.people[local_id] = {
+            "person_id": local_id,
+            "email": "local-laptop@pilot.local",
+            "full_name": "💻 Laptop 1 (Local Machine)",
+            "role": "Host Machine",
             "department": "Engineering",
             "manager_id": None
         }
-        self.devices["live-laptop-01"] = {"device_id": "live-laptop-01", "person_id": primary_id, "device_name": "My Laptop"}
-        self.devices["dev-pilot-laptop-01"] = {"device_id": "dev-pilot-laptop-01", "person_id": primary_id, "device_name": "dev-pilot-laptop-01"}
+        self.devices["DESKTOP-5FTFGVC"] = {"device_id": "DESKTOP-5FTFGVC", "person_id": local_id, "device_name": "Laptop 1 (Local)"}
+        self.devices["laptop-01"] = {"device_id": "laptop-01", "person_id": local_id, "device_name": "Laptop 1 (Local)"}
+
+        # Laptop 2: Remote Pilot Laptop (SSKL8734)
+        remote_id = "live-laptop-01"
+        self.people[remote_id] = {
+            "person_id": remote_id,
+            "email": "remote-laptop@pilot.local",
+            "full_name": "💻 Laptop 2 (Remote - SSKL8734)",
+            "role": "Remote Pilot User",
+            "department": "Engineering",
+            "manager_id": None
+        }
+        self.devices["SSKL8734"] = {"device_id": "SSKL8734", "person_id": remote_id, "device_name": "Laptop 2 (Remote)"}
+        self.devices["dev-pilot-laptop-01"] = {"device_id": "dev-pilot-laptop-01", "person_id": remote_id, "device_name": "Laptop 2 (Remote)"}
+        self.devices["dev-pilot-laptop-02"] = {"device_id": "dev-pilot-laptop-02", "person_id": remote_id, "device_name": "Laptop 2 (Remote)"}
 
         # 3. Default Projects
         prj_apollo = "33333333-3333-3333-3333-333333333331"

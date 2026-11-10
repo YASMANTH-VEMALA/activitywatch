@@ -69,7 +69,7 @@
           </div>
           <div class="mt-2 flex items-baseline space-x-2">
             <span id="kpi-active-hours" class="text-2xl font-bold text-white">--</span>
-            <span class="text-xs text-slate-500">hours</span>
+            <span id="kpi-active-unit" class="text-xs text-slate-500">hours</span>
           </div>
           <p class="text-[11px] text-emerald-400 mt-1">Non-AFK focused activity</p>
         </div>
@@ -483,7 +483,13 @@
 
         // KPI cards
         const m = data.metrics;
-        document.getElementById('kpi-active-hours').innerText = m.active_time_formatted || (m.active_hours + "h");
+        if (m.active_time_formatted) {
+          document.getElementById('kpi-active-hours').innerText = m.active_time_formatted;
+          document.getElementById('kpi-active-unit').innerText = '';
+        } else {
+          document.getElementById('kpi-active-hours').innerText = m.active_hours;
+          document.getElementById('kpi-active-unit').innerText = 'hours';
+        }
         document.getElementById('kpi-office-hours').innerText = m.office_hours;
         document.getElementById('kpi-utilization').innerText = `${m.utilization_percentage}%`;
         document.getElementById('kpi-ai-spend').innerText = `$${m.ai_spend_usd.toFixed(4)}`;
