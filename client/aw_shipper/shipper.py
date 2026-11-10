@@ -26,6 +26,7 @@ class HTTPShipper:
                 "Content-Type": "application/json",
                 "Content-Encoding": "gzip",
                 "X-Device-Key": self.config.device_key,
+                "ngrok-skip-browser-warning": "true",
                 "User-Agent": "aw-shipper/1.0"
             },
             method="POST"
@@ -42,6 +43,7 @@ class HTTPShipper:
             url,
             headers={
                 "X-Device-Key": self.config.device_key,
+                "ngrok-skip-browser-warning": "true",
                 "User-Agent": "aw-shipper/1.0"
             },
             method="POST"
@@ -61,3 +63,4 @@ class HTTPShipper:
             else:
                 self.outbox.increment_retry(item["id"])
                 break # Stop processing queue until network connectivity is restored
+

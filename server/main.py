@@ -1,4 +1,10 @@
 import os
+import sys
+import asyncio
+
+# Ensure server package directory is on Python path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +19,10 @@ from api.punches import router as punches_router
 from api.metrics import router as metrics_router
 from mcp.server import router as mcp_router
 from db.connection import init_db_pool, close_db_pool
+from workers.scheduler import BackgroundIntelligenceWorker
+
+worker = BackgroundIntelligenceWorker(interval_seconds=30)
+worker_task = None
 
 app = FastAPI(
     title="Enterprise ActivityWatch & AI Intelligence Platform",
@@ -45,10 +55,16 @@ if os.path.exists(static_dir):
 
 @app.on_event("startup")
 async def on_startup():
+    global worker_task
     await init_db_pool()
+    worker_task = asyncio.create_task(worker.start())
 
 @app.on_event("shutdown")
 async def on_shutdown():
+    if worker:
+        worker.stop()
+    if worker_task:
+        worker_task.cancel()
     await close_db_pool()
 
 @app.get("/", response_class=HTMLResponse)
@@ -62,3 +78,4 @@ async def serve_index():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "activitywatch-enterprise-backend"}
+
