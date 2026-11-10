@@ -37,3 +37,4 @@ async def generate_mock_punches(req: MockPunchGenerateRequest):
         "status": "success",
         "message": f"Mock punches and pilot activity generated for {target.isoformat()}"
     }
+

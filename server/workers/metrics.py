@@ -26,12 +26,9 @@ class MetricsCalculator:
         first_in = min([p["punch_time"] for p in in_punches]) if in_punches else None
         last_out = max([p["punch_time"] for p in out_punches]) if out_punches else None
 
-        office_hours = 0.0
+        office_hours = 8.0
         if first_in and last_out and first_in < last_out:
             office_hours = (last_out - first_in).total_seconds() / 3600.0
-        elif first_in:
-            # Default to 8 standard office hours if punch-out not recorded yet
-            office_hours = 8.0
 
         active_seconds = sum(
             s["duration_seconds"] for s in activity_spans if not s.get("is_afk", False)
@@ -66,3 +63,4 @@ class MetricsCalculator:
             "utilization_percentage": utilization,
             "open_flags_count": open_flags_count
         }
+

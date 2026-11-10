@@ -110,7 +110,7 @@
       <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h2 class="text-sm font-semibold text-white">Unified Timeline (09:00 - 19:00 IST)</h2>
+            <h2 class="text-sm font-semibold text-white">Unified Timeline (Today - 24h Live Stream)</h2>
             <p class="text-xs text-slate-400">Consolidated ActivityWatch telemetry + Biometric turnstile punches + LiteLLM AI calls</p>
           </div>
           <button onclick="toggleTransparencyDrawer()" class="text-xs font-medium text-indigo-400 hover:text-indigo-300 flex items-center space-x-1.5 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
@@ -125,12 +125,11 @@
             <!-- Dynamic colored chunks will be injected here -->
           </div>
           <div class="flex justify-between text-[10px] text-slate-500 font-mono px-1">
-            <span>09:00</span>
-            <span>11:00</span>
-            <span>13:00 (Lunch)</span>
-            <span>15:00</span>
-            <span>17:00</span>
-            <span>19:00</span>
+            <span>00:00</span>
+            <span>06:00</span>
+            <span>12:00</span>
+            <span>18:00</span>
+            <span>23:59</span>
           </div>
         </div>
 
@@ -455,15 +454,15 @@
       bar.innerHTML = '';
       if (!events || events.length === 0) return;
 
-      // Base 09:00 to 19:00 = 10 hours = 600 minutes
+      // Full 24-hour scale (00:00 to 24:00 = 1440 minutes)
+      const totalDayMinutes = 24 * 60;
+
       events.forEach(ev => {
         const d = new Date(ev.timestamp);
         const startMins = d.getHours() * 60 + d.getMinutes();
-        const baseStart = 9 * 60; // 09:00
-        const totalDuration = 10 * 60; // 10 hrs
         
-        const offsetPct = Math.max(0, Math.min(100, ((startMins - baseStart) / totalDuration) * 100));
-        const widthPct = Math.max(1.5, Math.min(100, ((ev.duration_seconds / 60) / totalDuration) * 100));
+        const offsetPct = Math.max(0, Math.min(100, (startMins / totalDayMinutes) * 100));
+        const widthPct = Math.max(0.6, Math.min(100, ((ev.duration_seconds / 60) / totalDayMinutes) * 100));
 
         let color = 'bg-indigo-500';
         if (ev.source === 'biometric_punch') color = 'bg-emerald-500';

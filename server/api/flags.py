@@ -95,3 +95,4 @@ def evaluate_flags_for_all(target_date: Optional[date] = None):
             if key not in existing_keys:
                 store.discrepancy_flags.append(flag)
                 existing_keys.add(key)
+

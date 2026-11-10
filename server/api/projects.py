@@ -32,3 +32,4 @@ async def list_projects():
         "count": len(project_list),
         "projects": project_list
     }
+

@@ -41,3 +41,4 @@ async def mcp_semantic_search(req: SemanticSearchRequest):
 @router.post("/tools/time_resolver")
 async def mcp_time_resolver(req: TimeResolverRequest):
     return await tool_time_resolver(req.expression)
+

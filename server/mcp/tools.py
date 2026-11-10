@@ -118,3 +118,4 @@ async def tool_semantic_search(query: str, top_k: int = 5) -> Dict[str, Any]:
 async def tool_time_resolver(expression: str) -> Dict[str, Any]:
     """Resolves natural language dates to IST range."""
     return resolve_time_expression(expression)
+

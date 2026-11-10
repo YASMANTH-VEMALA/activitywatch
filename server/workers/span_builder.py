@@ -114,3 +114,4 @@ class SpanBuilder:
             })
 
         return spans
+

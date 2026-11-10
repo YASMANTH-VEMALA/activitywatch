@@ -116,3 +116,4 @@ VALUES
 ('dev-ananya-dell', '22222222-2222-2222-2222-222222222223', 'Ananya Dell XPS 15', 'hash_dev_key_ananya'),
 ('dev-vikram-asus', '22222222-2222-2222-2222-222222222224', 'Vikram Asus ZenBook', 'hash_dev_key_vikram')
 ON CONFLICT DO NOTHING;
+

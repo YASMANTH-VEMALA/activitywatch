@@ -88,3 +88,4 @@ async def submit_day_end(req: DayEndSubmitRequest):
         "message": f"Day-end update submitted successfully for {req.work_date.isoformat()}",
         "record": store.day_end_updates[key]
     }
+

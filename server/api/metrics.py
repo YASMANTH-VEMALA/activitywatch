@@ -91,3 +91,4 @@ async def check_consent(person_id: str):
         "has_consented": len(user_consent) > 0,
         "latest_consent": user_consent[-1] if user_consent else None
     }
+

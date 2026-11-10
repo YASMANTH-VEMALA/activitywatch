@@ -20,3 +20,4 @@ class ShipperConfig:
         r"(?i)incognito",
         r"(?i)private browsing"
     ])
+

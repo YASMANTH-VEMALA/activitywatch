@@ -44,3 +44,4 @@ async def get_db_connection():
             yield conn
     else:
         raise RuntimeError("Database pool is not available.")
+

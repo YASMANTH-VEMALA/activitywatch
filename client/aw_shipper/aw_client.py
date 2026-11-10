@@ -35,3 +35,4 @@ class AWLocalClient:
                 return json.loads(resp.read().decode("utf-8"))
         except Exception as e:
             return []
+

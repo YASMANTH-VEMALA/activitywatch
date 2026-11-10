@@ -70,3 +70,4 @@ class DayEndSubmitRequest(BaseModel):
 class ConsentSignRequest(BaseModel):
     person_id: str
     policy_version: str = "v1.0-pilot"
+

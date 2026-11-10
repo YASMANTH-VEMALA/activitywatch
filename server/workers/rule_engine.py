@@ -215,3 +215,4 @@ class RuleEngine:
                 break
 
         return flags
+
